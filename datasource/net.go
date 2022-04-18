@@ -15,15 +15,14 @@ const (
 
 type Net struct {
 	url     string
-	apiKey  string
 	header  req.Header
 	param   req.Param
 	reqType ReqType
 	isJson  bool
 }
 
-func NewNet(url, apiKey string, header req.Header, param req.Param, reqType ReqType) *Net {
-	return &Net{url: url, apiKey: apiKey, header: header, param: param, reqType: reqType}
+func NewNet(url string, header req.Header, param req.Param, reqType ReqType) *Net {
+	return &Net{url: url, header: header, param: param, reqType: reqType}
 }
 
 func InitHeader(header map[string]string) (req.Header, bool) {
@@ -43,7 +42,7 @@ func hasJsonInHeader(key, value string) bool {
 	return strings.ToLower(key) == "accept" && strings.Contains(strings.ToLower(value), "json")
 }
 
-func InitParam(params map[string]string) req.Param {
+func InitParam(params map[string]interface{}) req.Param {
 	reqParams := req.Param{}
 	for k, v := range params {
 		reqParams[k] = v
@@ -51,7 +50,7 @@ func InitParam(params map[string]string) req.Param {
 	return reqParams
 }
 
-func (n *Net) Request() (string, error) {
+func (n *Net) Request() ([]byte, error) {
 	switch n.reqType {
 	case POST:
 		return n.post()
@@ -62,7 +61,7 @@ func (n *Net) Request() (string, error) {
 	}
 }
 
-func (n *Net) post() (string, error) {
+func (n *Net) post() ([]byte, error) {
 	var reqResp = &req.Resp{}
 	var err error
 	if n.isJson {
@@ -71,13 +70,13 @@ func (n *Net) post() (string, error) {
 	} else {
 		reqResp, err = req.Post(n.url, n.param, n.header)
 	}
-	return reqResp.String(), err
+	return reqResp.Bytes(), err
 }
 
-func (n *Net) get() (string, error) {
+func (n *Net) get() ([]byte, error) {
 	resp, err := req.Get(n.url, n.header)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return resp.String(), nil
+	return resp.Bytes(), nil
 }

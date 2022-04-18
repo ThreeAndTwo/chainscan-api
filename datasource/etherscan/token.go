@@ -6,6 +6,7 @@ import (
 	"github.com/ThreeAndTwo/chainscan-api/datasource"
 	"github.com/ThreeAndTwo/chainscan-api/types"
 	"github.com/imroc/req"
+	"github.com/mitchellh/mapstructure"
 	"golang.org/x/time/rate"
 )
 
@@ -13,30 +14,39 @@ type ether struct {
 	source      string
 	url         string
 	apiKey      string
-	contract    string
 	rateLimiter *rate.Limiter
 }
 
-func NewEther(source, url, apiKey, contract string, rate *rate.Limiter) *ether {
-	return &ether{source: source, url: url, apiKey: apiKey, contract: contract, rateLimiter: rate}
+func NewEther(source, url, apiKey string, rate *rate.Limiter) *ether {
+	if url[len(url)-1:] != "?" {
+		url += "?"
+	}
+
+	return &ether{source: source, url: url, apiKey: apiKey, rateLimiter: rate}
 }
 
-func (e *ether) GetTokenInfo() (*types.TokenInfo, error) {
-	param := make(map[string]string)
-	param["module"] = "token"
-	param["action"] = "tokeninfo"
-	param["address"] = e.contract
-	param["apikey"] = e.apiKey
-	reqParam := datasource.InitParam(param)
+func (e *ether) GetMarketInfoForCoin() ([]*types.MarketInfo, error) {
+	return nil, fmt.Errorf("unSupport for %s source", e.source)
+}
 
-	net := datasource.NewNet(e.url, e.apiKey, req.Header{}, reqParam, datasource.GET)
+func (e *ether) check() bool {
+	return e.url != "" && e.apiKey != ""
+}
+
+func (e *ether) GetTokenInfo(contract string) (*types.TokenInfo, error) {
+	if !e.check() {
+		return nil, fmt.Errorf("config mismatched for %s", e.source)
+	}
+
+	url := e.url + "module=token&action=tokeninfo&address=" + contract + "&apiKey=" + e.apiKey
+	net := datasource.NewNet(url, req.Header{}, req.Param{}, datasource.GET)
 	resp, err := net.Request()
 	if err != nil {
 		return nil, err
 	}
 
 	res := &types.EtherResult{}
-	err = json.Unmarshal([]byte(resp), res)
+	err = json.Unmarshal(resp, res)
 	if err != nil {
 		return nil, err
 	}
@@ -55,16 +65,53 @@ func (e *ether) GetTokenInfo() (*types.TokenInfo, error) {
 		Twitter:     ethInfo.Twitter,
 		Reddit:      ethInfo.Reddit,
 		Telegram:    ethInfo.Telegram,
+		Discord:     ethInfo.Discord,
 		Github:      ethInfo.Github,
 		Description: ethInfo.Description,
 	}
 	return tokenInfo, err
 }
 
-// TODO: get sourcecode
+func (e *ether) GetSourceCode(contract string) ([]*types.EtherSourceCode, error) {
+	if !e.check() {
+		return nil, fmt.Errorf("config mismatched for %s", e.source)
+	}
 
-func (e *ether) GetABIData() (string, error) {
-	abi, err := e.getAbiData()
+	url := e.url + "module=contract&action=getsourcecode&address=" + contract + "&apiKey=" + e.apiKey
+	net := datasource.NewNet(url, req.Header{}, req.Param{}, datasource.GET)
+	resp, err := net.Request()
+	if err != nil {
+		return nil, err
+	}
+
+	res := &types.EtherResult{}
+	err = json.Unmarshal(resp, res)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.Status != "1" {
+		return nil, fmt.Errorf("request service error for %s scan", e.source)
+	}
+
+	var sourceCode []*types.EtherSourceCode
+	for _, _codeRes := range res.Result.([]interface{}) {
+		code := &types.EtherSourceCode{}
+		if err = mapstructure.Decode(_codeRes, code); err != nil {
+			return nil, err
+		}
+
+		sourceCode = append(sourceCode, code)
+	}
+	return sourceCode, err
+}
+
+func (e *ether) GetABIData(contract string) (string, error) {
+	if !e.check() {
+		return "", fmt.Errorf("config mismatched for %s", e.source)
+	}
+
+	abi, err := e.getAbiData(contract)
 	if err != nil {
 		return "", err
 	}
@@ -76,32 +123,29 @@ func (e *ether) GetABIData() (string, error) {
 	return abi.Result.(string), nil
 }
 
-func (e *ether) getAbiData() (*types.EtherResult, error) {
-	param := make(map[string]string)
-	param["module"] = "contract"
-	param["action"] = "getabi"
-	param["address"] = e.contract
-	param["apikey"] = e.apiKey
-	reqParam := datasource.InitParam(param)
-
-	net := datasource.NewNet(e.url, e.apiKey, req.Header{}, reqParam, datasource.GET)
+func (e *ether) getAbiData(contract string) (*types.EtherResult, error) {
+	url := e.url + "module=contract&action=getabi&address=" + contract + "&apiKey=" + e.apiKey
+	net := datasource.NewNet(url, req.Header{}, req.Param{}, datasource.GET)
 	resp, err := net.Request()
 	if err != nil {
 		return nil, err
 	}
 
 	res := &types.EtherResult{}
-	err = json.Unmarshal([]byte(resp), res)
+	err = json.Unmarshal(resp, res)
 	if err != nil {
 		return nil, err
 	}
 
 	return res, err
-
 }
 
-func (e *ether) IsVerifyCode() (bool, error) {
-	abi, err := e.getAbiData()
+func (e *ether) IsVerifyCode(contract string) (bool, error) {
+	if !e.check() {
+		return false, fmt.Errorf("config mismatched for %s", e.source)
+	}
+
+	abi, err := e.getAbiData(contract)
 	if err != nil {
 		return false, err
 	}
