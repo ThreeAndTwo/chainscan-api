@@ -1,6 +1,7 @@
 package coingecko
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ThreeAndTwo/chainscan-api/datasource"
@@ -34,6 +35,7 @@ func (c *coingecko) check() bool {
 
 // GetMarketInfoForCoin /asset_platforms
 func (c *coingecko) GetMarketInfoForCoin() ([]*types.MarketInfo, error) {
+	_ = c.rateLimiter.Wait(context.Background())
 	if !c.check() {
 		return nil, fmt.Errorf("config mismatched for %s", c.source)
 	}
@@ -69,10 +71,11 @@ func (c *coingecko) GetMarketInfoForCoin() ([]*types.MarketInfo, error) {
 }
 
 func (c *coingecko) GetSourceCode(contract string) ([]*types.EtherSourceCode, error) {
-	return nil, fmt.Errorf("unSupport for CoinGecko")
+	return nil, fmt.Errorf("unSupport on CoinGecko")
 }
 
 func (c *coingecko) getMarketId() error {
+	_ = c.rateLimiter.Wait(context.Background())
 	c.market.Lock.Lock()
 	defer c.market.Lock.Unlock()
 
@@ -101,6 +104,7 @@ func (c *coingecko) GetTokenInfo(contract string) (*types.TokenInfo, error) {
 		return nil, fmt.Errorf("config mismatched for %s", c.source)
 	}
 
+	_ = c.rateLimiter.Wait(context.Background())
 	if err := c.getMarketId(); err != nil {
 		return nil, err
 	}
@@ -144,9 +148,9 @@ func (c *coingecko) GetTokenInfo(contract string) (*types.TokenInfo, error) {
 }
 
 func (c *coingecko) GetABIData(contact string) (string, error) {
-	return "", fmt.Errorf("unSupport for CoinGecko")
+	return "", fmt.Errorf("unSupport on CoinGecko")
 }
 
 func (c *coingecko) IsVerifyCode(contact string) (bool, error) {
-	return false, fmt.Errorf("unSupport for CoinGecko")
+	return false, fmt.Errorf("unSupport on CoinGecko")
 }

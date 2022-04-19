@@ -1,6 +1,7 @@
 package coinmarketcap
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ThreeAndTwo/chainscan-api/datasource"
@@ -34,10 +35,11 @@ func (c *cmc) check() bool {
 
 // GetMarketInfoForCoin /v1/cryptocurrency/map
 func (c *cmc) GetMarketInfoForCoin() ([]*types.MarketInfo, error) {
-
 	if !c.check() {
 		return nil, fmt.Errorf("config mismatched for %s", c.source)
 	}
+
+	_ = c.rateLimiter.Wait(context.Background())
 
 	header := make(map[string]string)
 	header["X-CMC_PRO_API_KEY"] = c.apiKey
@@ -77,6 +79,8 @@ func (c *cmc) GetTokenInfo(contract string) (*types.TokenInfo, error) {
 	if !c.check() {
 		return nil, fmt.Errorf("config mismatched for %s", c.source)
 	}
+
+	_ = c.rateLimiter.Wait(context.Background())
 
 	header := make(map[string]string)
 	header["X-CMC_PRO_API_KEY"] = c.apiKey

@@ -6,17 +6,21 @@ import (
 )
 
 type TokenInfo struct {
-	Name        string `json:"name"`
-	Symbol      string `json:"symbol"`
-	Decimals    string `json:"decimals"`
-	Type        string `json:"type"`
-	Website     string `json:"website"`
-	Twitter     string `json:"twitter"`
-	Reddit      string `json:"reddit"`
-	Telegram    string `json:"telegram"`
-	Discord     string `json:"discord"`
-	Github      string `json:"github"`
-	Description string `json:"description"`
+	Name          string `json:"name"`
+	Symbol        string `json:"symbol"`
+	Decimals      string `json:"decimals"`
+	Type          string `json:"type"`
+	Website       string `json:"website"`
+	Twitter       string `json:"twitter"`
+	Reddit        string `json:"reddit"`
+	Telegram      string `json:"telegram"`
+	Discord       string `json:"discord"`
+	Github        string `json:"github"`
+	Description   string `json:"description"`
+	Creator       string `json:"creator"`
+	DeployedBlock string `json:"deployed_block"`
+	DeployedTx    string `json:"deployed_tx"`
+	DeployedAt    string `json:"deployed_at"`
 }
 
 type PlatformForDataSource string
@@ -25,6 +29,7 @@ const (
 	EtherScan     PlatformForDataSource = "etherscan"
 	CoinMarketCap PlatformForDataSource = "coinmarketcap"
 	CoinGecko     PlatformForDataSource = "coingecko"
+	BitQuery      PlatformForDataSource = "bitquery"
 )
 
 type EtherResult struct {
@@ -1585,4 +1590,22 @@ type MarketMap struct {
 	Market        map[string]map[string]*MarketInfo // platform:uniName:MarketInfo
 	LastUpdatedAt time.Time
 	Lock          sync.RWMutex
+}
+
+type BitQueryParams struct {
+	Query     string `json:"query"`
+	Variables string `json:"variables"`
+}
+
+type BitQueryTokenResult struct {
+	Data struct {
+		Ethereum struct {
+			SmartContractCalls []struct {
+				Created     string `json:"created"`
+				CratedBlock string `json:"crated_block"`
+				CreatedTx   string `json:"created_tx"`
+				CreatedBy   string `json:"created_by"`
+			} `json:"smartContractCalls"`
+		} `json:"ethereum"`
+	} `json:"data"`
 }

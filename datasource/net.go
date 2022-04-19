@@ -50,6 +50,10 @@ func InitParam(params map[string]interface{}) req.Param {
 	return reqParams
 }
 
+func (n *Net) SetJson(isJson bool) {
+	n.isJson = isJson
+}
+
 func (n *Net) Request() ([]byte, error) {
 	switch n.reqType {
 	case POST:

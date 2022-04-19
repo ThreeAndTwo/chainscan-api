@@ -1,6 +1,7 @@
 package etherscan
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ThreeAndTwo/chainscan-api/datasource"
@@ -21,7 +22,6 @@ func NewEther(source, url, apiKey string, rate *rate.Limiter) *ether {
 	if url[len(url)-1:] != "?" {
 		url += "?"
 	}
-
 	return &ether{source: source, url: url, apiKey: apiKey, rateLimiter: rate}
 }
 
@@ -38,6 +38,7 @@ func (e *ether) GetTokenInfo(contract string) (*types.TokenInfo, error) {
 		return nil, fmt.Errorf("config mismatched for %s", e.source)
 	}
 
+	_ = e.rateLimiter.Wait(context.Background())
 	url := e.url + "module=token&action=tokeninfo&address=" + contract + "&apiKey=" + e.apiKey
 	net := datasource.NewNet(url, req.Header{}, req.Param{}, datasource.GET)
 	resp, err := net.Request()
@@ -76,6 +77,7 @@ func (e *ether) GetSourceCode(contract string) ([]*types.EtherSourceCode, error)
 	if !e.check() {
 		return nil, fmt.Errorf("config mismatched for %s", e.source)
 	}
+	_ = e.rateLimiter.Wait(context.Background())
 
 	url := e.url + "module=contract&action=getsourcecode&address=" + contract + "&apiKey=" + e.apiKey
 	net := datasource.NewNet(url, req.Header{}, req.Param{}, datasource.GET)
@@ -110,6 +112,7 @@ func (e *ether) GetABIData(contract string) (string, error) {
 	if !e.check() {
 		return "", fmt.Errorf("config mismatched for %s", e.source)
 	}
+	_ = e.rateLimiter.Wait(context.Background())
 
 	abi, err := e.getAbiData(contract)
 	if err != nil {
@@ -144,6 +147,7 @@ func (e *ether) IsVerifyCode(contract string) (bool, error) {
 	if !e.check() {
 		return false, fmt.Errorf("config mismatched for %s", e.source)
 	}
+	_ = e.rateLimiter.Wait(context.Background())
 
 	abi, err := e.getAbiData(contract)
 	if err != nil {
