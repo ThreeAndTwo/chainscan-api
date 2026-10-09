@@ -1,18 +1,21 @@
-# CI security incident — 2026-10-09
+# CI incident containment — 2026-10-09
 
 Repository: `ThreeAndTwo/chainscan-api`
 Branch: `k_dev`
-Head inspected before this change: `afc8a61e795ed39ca61c44796de83fdbc800509c`
+Inspected head: `0f92abede8ed11e0abb86d5b65f93e9f8944708c`
 
-Unauthorized GitHub Actions workflows were identified during an owner-requested review.
-The reviewed workflows attempted to send repository/history data or GitHub Actions secrets to an unapproved external endpoint.
-Do not restore or execute these workflows. A successful Actions run alone does not establish which credentials were received or remained valid.
+Actions were disabled before this cleanup. Keep them disabled until the repository owner explicitly approves restoration.
 
-The known malicious workflow is absent from this branch at the inspected head; this commit adds the cleanup record.
+The owner confirmed that this personal repository must not contain GitHub Actions workflows. This change removes every file under `.github/workflows` on this branch, regardless of its name.
 
-Review and containment notes
+Files removed in this change:
 
-- Keep legitimate build/test/release workflows; suspicious names alone are not evidence.
-- Revoke or rotate credentials that may have been exposed; deleting a workflow or a GitHub Secret does not revoke credentials at their issuing service.
-- Historical commits are retained for evidence. This change does not rewrite Git history.
-- The initial credential compromise remains under investigation; this record does not attribute it to a person or tool.
+- No workflow file remains to remove at this inspected head; this commit records containment and the owner's policy.
+
+Evidence and limits
+
+- Unauthorized workflows were observed attempting credential or repository-history disclosure. A successful workflow run alone does not prove data receipt or credential validity.
+- Existing Git history is retained as evidence. No release, tag, force push, or history rewrite is part of this cleanup.
+- Revoking a GitHub token does not rotate credentials issued by other services.
+- The initial credential compromise and the authentication method used for the mass write remain under investigation.
+- This record supersedes any earlier note suggesting that personal-repository workflows should be retained.
